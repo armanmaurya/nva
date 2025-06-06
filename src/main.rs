@@ -27,7 +27,7 @@ fn print_entry(entry: &DirEntry, depth: usize) {
     let indent = if depth == 1 {
         String::new()
     } else {
-        format!("{}├─ ", "│  ".repeat(depth - 1))
+        format!("{}├─ ", "|  ".repeat(depth - 2))
     };
     let file_name = entry.file_name().to_string_lossy();
     if entry.file_type().is_dir() {
