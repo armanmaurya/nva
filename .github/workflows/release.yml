@@ -17,8 +17,6 @@ jobs:
             ext: ""
           - target: x86_64-pc-windows-gnu
             ext: ".exe"
-          - target: x86_64-apple-darwin
-            ext: ""
 
     steps:
       - uses: actions/checkout@v4
