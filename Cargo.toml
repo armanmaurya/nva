@@ -1,7 +1,11 @@
 [package]
 name = "nva"
 version = "0.1.0"
+authors = ["Arman Maurya <mauryaarman5@gmail.com>"]
 edition = "2021"
+description = "A fast CLI tool for listing directories"
+license = "MIT"
+repository = "https://github.com/armanmaurya/nva"
 
 [dependencies]
 walkdir = "2"
