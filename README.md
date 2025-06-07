@@ -6,9 +6,10 @@ A fast, colorful CLI tool for listing directories, inspired by `tree` and design
 - Prints directory trees with indentation and Unicode symbols
 - Colors directories blue and files green for easy distinction
 - Supports filtering hidden files and directories (like `.git`)
-- Adjustable max depth for traversal
+- Adjustable max depth for traversal (`--depth` or `-d`)
 - Option to show or hide hidden files/directories with `-a`/`--all`
 - Fast and cross-platform (Rust)
+- Search for files or directories by name with `-s`/`--search`
 
 ## Installation
 
@@ -34,22 +35,29 @@ nva [OPTIONS]
 
 - `-p, --path <PATH>`: Path to the directory to explore (default: current directory)
 - `-a, --all`: Show hidden files and directories
-- `-l, --level <LEVEL>`: Max depth of traversal (default: 1)
+- `-d, --depth <DEPTH>`: Max depth of traversal (default: 1, use 0 for unlimited)
+- `-s, --search <PATTERN>`: Search for files or directories by name (case-insensitive)
 
 ### Example
 
+List the directory tree up to 2 levels deep:
 ```
-nva -l 2
+nva -d 2
 ```
 
 Output:
 ```
 .
-├── Cargo.toml
-├── README.md
-├── src/
+├─ Cargo.toml
+├─ README.md
+├─ src/
 │  ├─ main.rs
-└── target/
+└─ target/
+```
+
+Search for all files and directories containing "main":
+```
+nva --search main
 ```
 
 ## License
