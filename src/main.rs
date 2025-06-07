@@ -1,6 +1,6 @@
 use clap::Parser;
-use walkdir::{WalkDir, DirEntry};
 use colored::Colorize;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -13,11 +13,16 @@ struct Cli {
 
     /// Max depth of traversal
     #[arg(short, long, default_value_t = 1)]
-    level: usize,
+    depth: usize,
+
+    /// Search pattern
+    #[arg(short, long)]
+    search: Option<String>,
 }
 
 fn is_hidden(entry: &DirEntry) -> bool {
-    entry.file_name()
+    entry
+        .file_name()
         .to_str()
         .map(|s| s.starts_with('.') && s != "." && s != "..")
         .unwrap_or(false)
@@ -37,24 +42,53 @@ fn print_entry(entry: &DirEntry, depth: usize) {
     }
 }
 
-
 fn main() {
     let cli = Cli::parse();
 
-    println!("."); // Print the root
+    let search = cli.search.as_ref().map(|s| s.to_lowercase());
 
-    for entry in WalkDir::new(&cli.path)
+    // Set max_depth: if level is 0, use usize::MAX; otherwise, use the provided level (or usize::MAX if searching and level==1)
+    let max_depth = if (cli.depth == 1 && cli.search.is_some()) || cli.depth == 0 {
+        usize::MAX
+    } else {
+        cli.depth
+    };
+
+    // Collect all entrie
+    let entries: Vec<_> = WalkDir::new(&cli.path)
         .min_depth(1)
-        .max_depth(cli.level)
+        .max_depth(max_depth)
         .into_iter()
-        .filter_entry(|e| cli.all || !is_hidden(e)) // Only filter hidden directories if all is false
+        .filter_entry(|e| cli.all || !is_hidden(e))
         .filter_map(Result::ok)
-    {
+        .collect();
+
+    // Find all directories that are ancestors of matching files
+    let mut show_dirs = std::collections::HashSet::new();
+    if let Some(ref pattern) = search {
+        for entry in &entries {
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if name.contains(pattern) {
+                let mut path = entry.path();
+                while let Some(parent) = path.parent() {
+                    show_dirs.insert(parent.to_path_buf());
+                    path = parent;
+                }
+            }
+        }
+    }
+
+    for entry in entries {
         let depth = entry.depth();
-        // if depth > cli.level {
-        //     continue; // Skip entries deeper than the specified level
-        // }
-        print_entry(&entry, depth);
+        let file_name = entry.file_name().to_string_lossy();
+        let should_print = if let Some(ref pattern) = search {
+            let name = file_name.to_lowercase();
+            name.contains(pattern) || show_dirs.contains(entry.path())
+        } else {
+            true
+        };
+        if should_print {
+            print_entry(&entry, depth);
+        }
     }
 }
-
