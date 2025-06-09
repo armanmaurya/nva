@@ -1,6 +1,7 @@
 use clap::Parser;
-use colored::Colorize;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
+mod utils;
+use utils::{export_tree_to_file, is_hidden, print_entry};
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -18,28 +19,9 @@ struct Cli {
     /// Search pattern
     #[arg(short, long)]
     search: Option<String>,
-}
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with('.') && s != "." && s != "..")
-        .unwrap_or(false)
-}
-
-fn print_entry(entry: &DirEntry, depth: usize) {
-    let indent = if depth == 1 {
-        String::new()
-    } else {
-        format!("{}├─ ", "|  ".repeat(depth - 2))
-    };
-    let file_name = entry.file_name().to_string_lossy();
-    if entry.file_type().is_dir() {
-        println!("{}{}/", indent, file_name.blue());
-    } else {
-        println!("{}{}", indent, file_name.green());
-    }
+    #[arg(short, long)]
+    output: Option<String>,
 }
 
 fn main() {
@@ -76,6 +58,14 @@ fn main() {
                 }
             }
         }
+    }
+
+    // if output is specified, write to file and don't print to stdout
+    if let Some(output_path) = &cli.output {
+        export_tree_to_file(&entries, &show_dirs, search.as_deref(), output_path)
+            .expect("Failed to export tree to file");
+        println!("Tree exported to {}", output_path);
+        return;
     }
 
     for entry in entries {
