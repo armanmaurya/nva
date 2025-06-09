@@ -1,5 +1,6 @@
 use walkdir::DirEntry;
 use colored::Colorize;
+use humansize::{format_size, DECIMAL};
 
 pub fn is_hidden(entry: &DirEntry) -> bool {
     entry
@@ -19,7 +20,29 @@ pub fn print_entry(entry: &DirEntry, depth: usize) {
     if entry.file_type().is_dir() {
         println!("{}{}/", indent, file_name.blue());
     } else {
-        println!("{}{}", indent, file_name.green());
+        let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+        let human_size = format_size(size, DECIMAL);
+        println!("{}{} ({})", indent, file_name.green(), human_size.yellow());
+    }
+}
+
+pub fn print_tree(
+    entries: &[DirEntry],
+    show_dirs: &std::collections::HashSet<std::path::PathBuf>,
+    search: Option<&str>,
+) {
+    for entry in entries {
+        let depth = entry.depth();
+        let file_name = entry.file_name().to_string_lossy();
+        let should_print = if let Some(pattern) = search {
+            let name = file_name.to_lowercase();
+            name.contains(pattern) || show_dirs.contains(entry.path())
+        } else {
+            true
+        };
+        if should_print {
+            print_entry(entry, depth);
+        }
     }
 }
 

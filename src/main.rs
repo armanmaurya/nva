@@ -1,7 +1,7 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use walkdir::WalkDir;
 mod utils;
-use utils::{export_tree_to_file, is_hidden, print_entry};
+use utils::{export_tree_to_file, is_hidden, print_tree};
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -18,19 +18,34 @@ struct Cli {
 
     /// Search pattern
     #[arg(short, long)]
-    search: Option<String>,
+    find: Option<String>,
 
+    /// Output file path
     #[arg(short, long)]
     output: Option<String>,
+
+    /// Sort by: name, size
+    #[arg(long, value_enum, default_value_t = SortBy::Name)]
+    sort: SortBy,
+
+    /// Output in reverse order
+    #[arg(long, default_value_t = false)]
+    reverse: bool,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+enum SortBy {
+    Name,
+    Size,
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    let search = cli.search.as_ref().map(|s| s.to_lowercase());
+    let search = cli.find.as_ref().map(|s| s.to_lowercase());
 
     // Set max_depth: if level is 0, use usize::MAX; otherwise, use the provided level (or usize::MAX if searching and level==1)
-    let max_depth = if (cli.depth == 1 && cli.search.is_some()) || cli.depth == 0 {
+    let max_depth = if (cli.depth == 1 && cli.find.is_some()) || cli.depth == 0 {
         usize::MAX
     } else {
         cli.depth
@@ -68,17 +83,6 @@ fn main() {
         return;
     }
 
-    for entry in entries {
-        let depth = entry.depth();
-        let file_name = entry.file_name().to_string_lossy();
-        let should_print = if let Some(ref pattern) = search {
-            let name = file_name.to_lowercase();
-            name.contains(pattern) || show_dirs.contains(entry.path())
-        } else {
-            true
-        };
-        if should_print {
-            print_entry(&entry, depth);
-        }
-    }
+    // Use print_tree for terminal output
+    print_tree(&entries, &show_dirs, search.as_deref());
 }
