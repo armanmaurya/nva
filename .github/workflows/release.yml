@@ -39,7 +39,7 @@ jobs:
           zip nva-${{ matrix.target }}.zip nva${{ matrix.ext }}
 
       - name: Create GitHub Release and upload assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.3.0
         with:
           files: dist/nva-*.zip
           draft: true

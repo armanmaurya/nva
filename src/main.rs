@@ -9,7 +9,7 @@ struct Cli {
     path: String,
 
     /// Show hidden files
-    #[arg(short = 'a', long, default_value_t = false)]
+    #[arg(short, long, default_value_t = false)]
     all: bool,
 
     /// Max depth of traversal
