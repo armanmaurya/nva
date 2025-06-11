@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use walkdir::WalkDir;
 mod utils;
 use utils::{export_tree_to_file, is_hidden, print_tree, print_with_highlighting};

@@ -100,5 +100,6 @@ jobs:
           files: dist/*
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
