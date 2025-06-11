@@ -66,6 +66,7 @@ jobs:
           mkdir -p dist
           cp target/x86_64-pc-windows-gnu/release/nva.exe dist/
           cd dist && zip nva_${{ steps.extract.outputs.version }}_x86_64-pc-windows-gnu.zip nva.exe
+          rm nva.exe
 
       - name: Upload .zip
         uses: actions/upload-artifact@v4
