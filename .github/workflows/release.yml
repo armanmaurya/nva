@@ -3,46 +3,100 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger on tags like v1.0.0
+      - 'v*.*.*'
 
 jobs:
-  build:
-    name: Build and Release Binaries
+  build-linux:
+    name: Build .deb for Linux
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            ext: ""
-          - target: x86_64-pc-windows-gnu
-            ext: ".exe"
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust and Add Target
+      - name: Extract version from tag
+        id: extract
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install Rust + Tools
         run: |
-          rustup target add ${{ matrix.target }}
+          rustup target add x86_64-unknown-linux-gnu
+          cargo install cross
+          cargo install cargo-deb
 
-      - name: Install cross
-        run: cargo install cross
+      - name: Build binary and .deb
+        run: |
+          cross build --release --target x86_64-unknown-linux-gnu
+          cargo deb --target x86_64-unknown-linux-gnu
 
-      - name: Build with cross
-        run: cross build --release --target ${{ matrix.target }}
-
-      - name: Package binary
+      - name: Prepare .deb artifact
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/nva${{ matrix.ext }} dist/
-          cd dist
-          zip nva-${{ matrix.target }}.zip nva${{ matrix.ext }}
+          cp target/x86_64-unknown-linux-gnu/debian/*.deb dist/nva_${{ steps.extract.outputs.version }}_amd64.deb
 
-      - name: Create GitHub Release and upload assets
-        uses: softprops/action-gh-release@v2.2.2
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
         with:
-          files: dist/nva-*.zip
-          draft: true
+          name: linux-artifacts
+          path: dist/*
+
+  build-windows:
+    name: Build Windows Binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: extract
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install Rust + Tools
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          cargo install cross
+
+      - name: Build binary
+        run: cross build --release --target x86_64-pc-windows-gnu
+
+      - name: Prepare .zip artifact
+        run: |
+          mkdir -p dist
+          cp target/x86_64-pc-windows-gnu/release/nva.exe dist/
+          cd dist && zip nva_${{ steps.extract.outputs.version }}_x86_64-pc-windows-gnu.zip nva.exe
+
+      - name: Upload .zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: dist/*
+
+  release:
+    name: Publish GitHub Release
+    needs:
+      - build-linux
+      - build-windows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: dist
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: dist
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
         env:

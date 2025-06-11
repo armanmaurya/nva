@@ -12,3 +12,13 @@ walkdir = "2"
 clap = { version = "4.5", features = ["derive"] }
 colored = "2"
 humansize = "2.1.3"
+
+
+[package.metadata.deb]
+maintainer = "Arman Maurya <mauryaarman5@gmail.com>"
+section = "utils"
+priority = "optional"
+extended-description = "A fast CLI tool for listing directories"
+assets = [
+  ["target/release/nva", "usr/bin/nva", "755"]
+]
