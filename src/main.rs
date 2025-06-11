@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use walkdir::WalkDir;
 mod utils;
-use utils::{export_tree_to_file, is_hidden, print_tree};
+use utils::{export_tree_to_file, is_hidden, print_tree, print_with_highlighting};
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -24,22 +24,43 @@ struct Cli {
     #[arg(short, long)]
     output: Option<String>,
 
-    /// Sort by: name, size
-    #[arg(long, value_enum, default_value_t = SortBy::Name)]
-    sort: SortBy,
-
     /// Output in reverse order
     #[arg(long, default_value_t = false)]
     reverse: bool,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
-enum SortBy {
-    Name,
-    Size,
+/// Print the content of a file with syntax highlighting if supported, otherwise plain text.
+fn print_file(path: &std::path::Path) {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    match std::fs::read_to_string(path) {
+        Ok(content) => {
+            // Highlight if syntect supports the extension, otherwise print plain
+            let ps = syntect::parsing::SyntaxSet::load_defaults_newlines();
+            if ps.find_syntax_by_extension(ext).is_some() {
+                if let Err(e) = print_with_highlighting(&content, ext) {
+                    eprintln!("{}", content); // fallback: plain print
+                    eprintln!("[Warning: highlighting failed: {}]", e);
+                }
+            } else {
+                println!("{}", content);
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to read file {}: {}", path.display(), e);
+        }
+    }
 }
 
 fn main() {
+    let mut args = std::env::args();
+    let _ = args.next(); // skip executable name
+    if let Some(arg1) = args.next() {
+        let path = std::path::Path::new(&arg1);
+        if path.is_file() {
+            print_file(path);
+            return;
+        }
+    }
     let cli = Cli::parse();
 
     let search = cli.find.as_ref().map(|s| s.to_lowercase());

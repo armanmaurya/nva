@@ -1,6 +1,10 @@
-use walkdir::DirEntry;
 use colored::Colorize;
 use humansize::{format_size, DECIMAL};
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style, ThemeSet};
+use syntect::parsing::SyntaxSet;
+use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
+use walkdir::DirEntry;
 
 pub fn is_hidden(entry: &DirEntry) -> bool {
     entry
@@ -76,6 +80,20 @@ pub fn export_tree_to_file(
                 writeln!(file, "{}{}", indent, file_name)?;
             }
         }
+    }
+    Ok(())
+}
+
+pub fn print_with_highlighting(content: &str, ext: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let ps = SyntaxSet::load_defaults_newlines();
+    let ts = ThemeSet::load_defaults();
+    let syntax = ps
+        .find_syntax_by_extension(ext)
+        .unwrap_or_else(|| ps.find_syntax_plain_text());
+    let mut h = HighlightLines::new(syntax, &ts.themes["base16-ocean.dark"]);
+    for line in LinesWithEndings::from(content) {
+        let ranges: Vec<(Style, &str)> = h.highlight_line(line, &ps)?;
+        print!("{}", as_24_bit_terminal_escaped(&ranges[..], false));
     }
     Ok(())
 }

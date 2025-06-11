@@ -12,6 +12,7 @@ walkdir = "2"
 clap = { version = "4.5", features = ["derive"] }
 colored = "2"
 humansize = "2.1.3"
+syntect = "5.2.0"
 
 
 [package.metadata.deb]
