@@ -4,12 +4,15 @@ A fast, colorful CLI tool for listing directories, inspired by `tree` and design
 
 ## Features
 - Prints directory trees with indentation and Unicode symbols
-- Colors directories blue and files green for easy distinction
+- Colors directories blue and files green for easy distinction (only in terminal output)
 - Supports filtering hidden files and directories (like `.git`)
 - Adjustable max depth for traversal (`--depth` or `-d`)
 - Option to show or hide hidden files/directories with `-a`/`--all`
 - Fast and cross-platform (Rust)
-- Search for files or directories by name with `-s`/`--search`
+- Search for files or directories by name with `--find <PATTERN>`
+- Export tree output to a file (plain text, no color)
+- Print file contents with syntax highlighting for supported languages
+- Unified output logic: same tree format for terminal and file
 
 ## Installation
 
@@ -28,21 +31,26 @@ cargo build --release
 ## Usage
 
 ```
-nva [OPTIONS]
+nva <PATH|FILE> [OPTIONS]
 ```
+
+- If `<PATH>` is a directory, prints the directory tree.
+- If `<FILE>` is a file, prints its contents with syntax highlighting (if supported).
+- If no argument is given, lists the current directory.
 
 ### Options
 
-- `-p, --path <PATH>`: Path to the directory to explore (default: current directory)
-- `-a, --all`: Show hidden files and directories
-- `-d, --depth <DEPTH>`: Max depth of traversal (default: 1, use 0 for unlimited)
-- `-s, --search <PATTERN>`: Search for files or directories by name (case-insensitive)
+- `-a, --all` : Show hidden files and directories
+- `-d, --depth <DEPTH>` : Max depth of traversal (default: 1, use 0 for unlimited)
+- `--find <PATTERN>` : Search for files or directories by name (case-insensitive)
+- `-o, --output <FILE>` : Export the tree to a file (plain text, no color)
+- `--reverse` : Output in reverse order
 
-### Example
+### Examples
 
 List the directory tree up to 2 levels deep:
 ```
-nva -d 2
+nva . -d 2
 ```
 
 Output:
@@ -57,7 +65,17 @@ Output:
 
 Search for all files and directories containing "main":
 ```
-nva --search main
+nva . --find main
+```
+
+Export the tree to a file (no color):
+```
+nva . --output tree.txt
+```
+
+Print a file with syntax highlighting:
+```
+nva src/main.rs
 ```
 
 ## License

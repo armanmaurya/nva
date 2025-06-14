@@ -1,9 +1,9 @@
 use clap::Parser;
 use std::io::Write;
 use walkdir::WalkDir;
-mod utils;
 mod output;
-use output::{output_tree};
+mod utils;
+use output::output_tree;
 use output::print_file_with_syntax_highlighting;
 use utils::is_hidden;
 
@@ -30,28 +30,30 @@ struct Cli {
     reverse: bool,
 }
 
-
-
 fn main() {
     let mut args = std::env::args();
-    let exe = args.next().unwrap();
-    if let Some(arg1) = args.next() {
-        let path = std::path::Path::new(&arg1);
-        if path.is_file() {
-            print_file_with_syntax_highlighting(path);
-            return;
-        } else if path.is_dir() {
-            // Remove the path argument and pass the rest to print_dir
-            let remaining_args: Vec<String> = std::iter::once(exe).chain(args).collect();
-            print_dir(path, remaining_args);
-            return;
-        } else {
-            eprintln!("{} is not a valid file or directory", arg1);
-            std::process::exit(1);
+    let exe = args.next().unwrap_or_else(|| "program".to_string());
+    let arg1 = args.next();
+
+    match arg1 {
+        Some(ref path_str) => {
+            let path = std::path::Path::new(path_str);
+            if path.is_file() {
+                print_file_with_syntax_highlighting(path);
+            } else if path.is_dir() {
+                let remaining_args: Vec<String> = std::iter::once(exe).chain(args).collect();
+                print_dir(path, remaining_args);
+            } else {
+                // Unknown path: fallback to current directory
+                let args: Vec<String> = std::env::args().collect();
+                print_dir(std::path::Path::new("."), args);
+            }
         }
-    } else {
-        // No argument: pass all args (just the exe) to print_dir, default to current directory
-        print_dir(std::path::Path::new("."), std::env::args().collect());
+        None => {
+            // No arguments: print current directory
+            let args: Vec<String> = std::env::args().collect();
+            print_dir(std::path::Path::new("."), args);
+        }
     }
 }
 
@@ -84,8 +86,7 @@ fn print_dir(path: &std::path::Path, args: Vec<String>) {
         }
     }
     if let Some(output_path) = &cli.output {
-        let mut file = std::fs::File::create(output_path)
-            .expect("Failed to create output file");
+        let mut file = std::fs::File::create(output_path).expect("Failed to create output file");
         writeln!(file, ".").ok();
         output_tree(&mut file, &entries, &show_dirs, search.as_deref(), false)
             .expect("Failed to export tree to file");
@@ -95,5 +96,6 @@ fn print_dir(path: &std::path::Path, args: Vec<String>) {
     // Print to terminal with color
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
-    output_tree(&mut handle, &entries, &show_dirs, search.as_deref(), true).expect("Failed to print tree");
+    output_tree(&mut handle, &entries, &show_dirs, search.as_deref(), true)
+        .expect("Failed to print tree");
 }
