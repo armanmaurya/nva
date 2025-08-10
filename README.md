@@ -28,6 +28,29 @@ cd nva
 cargo build --release
 ```
 
+### Windows (Download latest release automatically)
+
+Use the provided PowerShell installer to download the latest release from GitHub and add it to your PATH:
+
+```
+powershell -ExecutionPolicy Bypass -File .\scripts\install.ps1
+```
+
+Options:
+- Override install directory: `-InstallDir "$env:LOCALAPPDATA\nva\bin"`
+- Force overwrite existing: `-Force`
+
+### Uninstall (Windows)
+
+```
+powershell -ExecutionPolicy Bypass -File .\scripts\uninstall.ps1
+```
+
+Options:
+- Remove from PATH: `-RemoveFromPath`
+- Skip confirmations: `-Force`
+- Remove empty install folder(s): `-Purge`
+
 ## Usage
 
 ```
